@@ -1,0 +1,515 @@
+jQuery(function () {
+    jQuery("#pc_quantity_needed").on('input keydown change keypress',function (event) {
+        
+        // if first enter period prevent and empty the textbox
+        if(jQuery(this).val() == '.'){
+           jQuery(this).val('');  
+        }
+
+        // only allow one period at a time
+        if(jQuery(this).val().indexOf('.') !== -1 && event.which == 190)
+            event.preventDefault();
+
+        // only allow to enter numbers and period
+        if ((event.which >= 48 && event.which <= 57) || (event.which >= 96 && event.which <= 105) || event.which == 8 || event.which == 9 || event.which == 37 || event.which == 39 || event.which == 46 || event.which == 190) {
+        } else {
+            event.preventDefault();
+        }
+
+        // else get the value and pass it to function for calculation
+        var value = jQuery(this).val();
+
+        // call the calculation function
+        simple_measurement_calculation_callback(value);
+        
+    });
+});
+
+// ajax call for calculation
+function simple_measurement_calculation_callback(quantity) { 
+    var weight_product_id = jQuery("#pc_against_postid").val();
+    var condition = 'weight_base_condition'; 
+    jQuery.ajax({
+        url:  pc_var_arguments.ajax_url, 
+        type : 'post',
+        dataType: 'json',
+        data : {
+            action : 'weight_action_ajax',
+            condition :condition,
+            quantity : quantity,
+            weight_product_id : weight_product_id,
+        },
+        success : function(response) {
+            var price_form = pc_var_arguments.curr_pos;
+            var op_price = "";
+            if(price_form == 'left') {
+                
+                op_price = accounting.formatMoney(response, { 
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%s%v" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+            
+            } else if(price_form == 'left_space') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%s %v" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+
+            } else if(price_form == 'right') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%v%s" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+
+            } else if(price_form == 'right_space') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%v %s" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+            
+            }
+
+            // attached with id
+            jQuery('#ext_amount').html(op_price);
+        }
+    }); 
+};
+
+
+// ---------------------------------------
+// --------------- - - - Area box by tiles 
+// ---------------------------------------
+jQuery(function () {
+    jQuery("#length_qty, #width_qty").on('input keydown change keypress',function (event) {
+        
+        // disabled the input if its boxtype product
+        jQuery(".qty").prop('disabled', true);
+        // getting the area with length and width
+        var area_length = document.getElementById('length_qty').value;    
+        var area_width = document.getElementById('width_qty').value;
+
+        // if first enter period prevent and empty the textbox
+        if(jQuery(this).val() == '.'){
+           jQuery(this).val('');  
+        }
+
+        // only allow one period at a time
+        if(jQuery(this).val().indexOf('.') !== -1 && event.which == 190)
+            event.preventDefault();
+
+        // only allow to enter numbers and period
+        if ((event.which >= 48 && event.which <= 57) || (event.which >= 96 && event.which <= 105) || event.which == 8 || event.which == 9 || event.which == 37 || event.which == 39 || event.which == 46 || event.which == 190) {
+        } else {
+            event.preventDefault();
+        }
+
+        // total required area
+        var box_required_are = area_length * area_width;
+        // total box area
+        var total_area = document.getElementById('_ext_box_area').value;
+        
+        // calcualting the number of box required
+        if( box_required_are < total_area ) {
+            box_required_are = total_area;
+        } else if (box_required_are > total_area) {
+            var reminder = box_required_are/total_area;
+            rminde = reminder.toString().split(".")[0]; 
+            var once = total_area * rminde;
+            box_required_are = +once + +total_area;
+            box_required_are = box_required_are.toFixed(2);
+        }
+        // get the totla box numbers
+        var qtytoi = Math.round(box_required_are/total_area);
+        jQuery(".qty").add(qtytoi);
+        jQuery(".qty").val(qtytoi);
+        jQuery('#result').html(box_required_are);
+        jQuery('#pc_quantity_needed').attr('value',qtytoi);
+        get_item_quantity_box(qtytoi);
+
+    });
+});
+
+function get_item_quantity_box(quantity) {
+    var product_id = jQuery("#pc_against_postid").val();
+    var ajaxurl = "<?php echo admin_url( 'admin-ajax.php'); ?>";
+    var condition = 'adv_boxtiles_product_condition';
+    jQuery.ajax({
+        url : pc_var_arguments.ajax_url,
+        type : 'post',
+        data : {
+            action : 'boxtiles_action_ajax',
+            condition :condition,
+            quantity : quantity,
+            product_id : product_id,
+        },
+        success : function( response ) {
+            console.log(response);
+            var price_form = pc_var_arguments.curr_pos;
+            var op_price = "";
+            if(price_form == 'left') {
+                
+                op_price = accounting.formatMoney(response, { 
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%s%v" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+            
+            } else if(price_form == 'left_space') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%s %v" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+
+            } else if(price_form == 'right') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%v%s" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+
+            } else if(price_form == 'right_space') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%v %s" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+            
+            }
+
+            // // attached with id
+            jQuery('#ext_amount').html(response);
+        }
+    });  
+    
+}
+
+
+
+// ---------------------------------------
+// --------------- - - - Area length*width,,,
+// ---------------------------------------
+jQuery(function () {
+    jQuery("#length_qty_area, #width_qty_area").on('input keydown change keypress',function (event) {
+        
+        // getting the area with length and width
+        var area_length = document.getElementById('length_qty_area').value;    
+        var area_width = document.getElementById('width_qty_area').value;
+
+       // if first enter period prevent and empty the textbox
+        if(jQuery(this).val() == '.'){
+           jQuery(this).val('');  
+        }
+
+        // only allow one period at a time
+        if(jQuery(this).val().indexOf('.') !== -1 && event.which == 190)
+            event.preventDefault();
+
+        // only allow to enter numbers and period
+        if ((event.which >= 48 && event.which <= 57) || (event.which >= 96 && event.which <= 105) || event.which == 8 || event.which == 9 || event.which == 37 || event.which == 39 || event.which == 46 || event.which == 190) {
+        } else {
+            event.preventDefault();
+        }
+
+        var total_area = area_length * area_width;
+        jQuery('#result').html(total_area);
+        jQuery('#pc_quantity_needed').attr('value',total_area);
+        var quantity = jQuery("#pc_quantity_needed").val();
+        get_item_quantity(quantity);
+
+    });
+});
+
+function get_item_quantity(quantity) {
+    var product_id = jQuery("#pc_against_postid").val();
+    var ajaxurl = "<?php echo admin_url( 'admin-ajax.php'); ?>";
+    var condition = 'area_lw_product_condition';
+    jQuery.ajax({
+        url : pc_var_arguments.ajax_url,
+        type : 'post',
+        data : {
+            action : 'arealw_action_ajax',
+            condition :condition,
+            quantity : quantity,
+            product_id : product_id,
+        },
+        success : function( response ) {
+            var price_form = pc_var_arguments.curr_pos;
+            var op_price = "";
+            if(price_form == 'left') {
+                
+                op_price = accounting.formatMoney(response, { 
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%s%v" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+            
+            } else if(price_form == 'left_space') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%s %v" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+
+            } else if(price_form == 'right') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%v%s" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+
+            } else if(price_form == 'right_space') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%v %s" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+            
+            }
+            // attached with id
+            jQuery('#ext_amount').html(op_price);
+        }
+    });  
+    
+}
+
+
+// ---------------------------------------
+// --------------- - - - Room Walls length*width,,,
+// ---------------------------------------
+jQuery(function () {
+    jQuery("#length_qty_wall, #width_qty_wall").on('input keydown change keypress',function (event) {
+        
+        // getting the area with length and width
+        var wall_length = document.getElementById('length_qty_wall').value;    
+        var wall_width = document.getElementById('width_qty_wall').value;
+
+        // if first enter period prevent and empty the textbox
+        if(jQuery(this).val() == '.'){
+           jQuery(this).val('');  
+        }
+
+        // only allow one period at a time
+        if(jQuery(this).val().indexOf('.') !== -1 && event.which == 190)
+            event.preventDefault();
+
+        // only allow to enter numbers and period
+        if ((event.which >= 48 && event.which <= 57) || (event.which >= 96 && event.which <= 105) || event.which == 8 || event.which == 9 || event.which == 37 || event.which == 39 || event.which == 46 || event.which == 190) {
+        } else {
+            event.preventDefault();
+        }
+
+        var total_area = wall_length * wall_width;
+        jQuery('#result').html(total_area);
+        jQuery('#pc_quantity_needed').attr('value',total_area);
+        var quantity = jQuery("#pc_quantity_needed").val();
+        get_item_quantity(quantity);
+
+    });
+});
+
+function get_item_quantity(quantity) {
+    var product_id = jQuery("#pc_against_postid").val();
+    var ajaxurl = "<?php echo admin_url( 'admin-ajax.php'); ?>";
+    var condition = 'roomwall_product_condition';
+    jQuery.ajax({
+        url : pc_var_arguments.ajax_url,
+        type : 'post',
+        data : {
+            action : 'roomwall_action_ajax',
+            condition :condition,
+            quantity : quantity,
+            product_id : product_id,
+        },
+        success : function( response ) {
+            var price_form = pc_var_arguments.curr_pos;
+            var op_price = "";
+            if(price_form == 'left') {
+                
+                op_price = accounting.formatMoney(response, { 
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%s%v" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+            
+            } else if(price_form == 'left_space') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%s %v" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+
+            } else if(price_form == 'right') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%v%s" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+
+            } else if(price_form == 'right_space') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%v %s" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+            
+            }
+            // attached with id
+            jQuery('#ext_amount').html(op_price);
+        }
+    });  
+    
+}
+
+
+// ---------------------------------------
+// --------------- - - - volume advanced mulch product,,,
+// ---------------------------------------
+jQuery(function () {
+    jQuery("#length_qty_vol, #width_qty_vol, #height_qty_vol").on('input keydown change keypress',function (event) {
+
+        // getting the area with length and width
+        var length_voladv = document.getElementById('length_qty_vol').value;    
+        var width_voladv = document.getElementById('width_qty_vol').value;
+        var height_voladv = document.getElementById('height_qty_vol').value;
+
+        // if first enter period prevent and empty the textbox
+        if(jQuery(this).val() == '.'){
+           jQuery(this).val('');  
+        }
+
+        // only allow one period at a time
+        if(jQuery(this).val().indexOf('.') !== -1 && event.which == 190)
+            event.preventDefault();
+
+        // only allow to enter numbers and period
+        if ((event.which >= 48 && event.which <= 57) || (event.which >= 96 && event.which <= 105) || event.which == 8 || event.which == 9 || event.which == 37 || event.which == 39 || event.which == 46 || event.which == 190) {
+        } else {
+            event.preventDefault();
+        }
+
+
+        var inch_to_feet  = height_voladv / 12;
+
+        var total_to_three = inch_to_feet * width_voladv * length_voladv ;
+        var totay_cu_yad = total_to_three / 27;
+        var net_cubeyard = totay_cu_yad.toFixed(3);
+        jQuery('#result').html(net_cubeyard);
+        jQuery('#pc_quantity_needed').attr('value',net_cubeyard);
+        var quantity = jQuery("#pc_quantity_needed").val();
+        get_item_quantity(quantity);
+
+    });
+});
+
+function get_item_quantity(quantity) {
+    var product_id = jQuery("#pc_against_postid").val();
+    var ajaxurl = "<?php echo admin_url( 'admin-ajax.php'); ?>";
+    var condition = 'volumed_product_condition';
+    jQuery.ajax({
+        url : pc_var_arguments.ajax_url,
+        type : 'post',
+        data : {
+            action : 'volumed_action_ajax',
+            condition :condition,
+            quantity : quantity,
+            product_id : product_id,
+        },
+        success : function( response ) {
+            var price_form = pc_var_arguments.curr_pos;
+            var op_price = "";
+            if(price_form == 'left') {
+                
+                op_price = accounting.formatMoney(response, { 
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%s%v" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+            
+            } else if(price_form == 'left_space') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%s %v" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+
+            } else if(price_form == 'right') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%v%s" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+
+            } else if(price_form == 'right_space') {
+                
+                op_price = accounting.formatMoney(response, {
+                    symbol: pc_var_arguments.curr_string,
+                    format: "%v %s" }, 
+                        pc_var_arguments.pc_decimal,
+                        pc_var_arguments.pc_thou_sep,
+                        pc_var_arguments.pc_decimal_sep
+                ); // €4.999,99
+            
+            }
+            // attached with id
+            jQuery('#ext_amount').html(op_price);
+        }
+    });  
+    
+}
